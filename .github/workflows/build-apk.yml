@@ -1,4 +1,4 @@
-name: Generate APK from HTML
+namename: Generate APK from HTML
 
 on:
   push:
@@ -11,37 +11,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Скачиваем ваш HTML/CSS код
+      # 1. Скачиваем ваш код
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      # 3. Устанавливаем Java для сборки Android приложений
-      - name: Set up JDK 17
+      # 2. Настраиваем Java 11 (самая стабильная версия для Cordova)
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
 
-      # 4. Инициализируем Capacitor и собираем проект
-      - name: Build Android App
+      # 3. Настраиваем Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 4. Собираем приложение через Cordova
+      - name: Install Cordova and Build APK
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli
-          npx cap init "Fishing Game" "com.nikitadroid.fishing" --web-dir=.
-          npm install @capacitor/android
-          npx cap add android
-          npx cap sync
-          cd android && ./gradlew assembleDebug
+          npm install -g cordova
+          cordova create build_folder com.nikitadroid.fishing "Fishing Game"
+          rm -rf build_folder/www/*
+          cp -r . build_folder/www/ || true
+          cd build_folder
+          cordova platform add android
+          cordova build android --device
 
-      # 5. Сохраняем готовый APK файл в артефакты
-      - name: Upload APK
+      # 5. Сохраняем готовый APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: game-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: build_folder/platforms/android/app/build/outputs/apk/debug/app-debug.apk
