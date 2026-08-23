@@ -14,19 +14,33 @@ jobs:
       contents: write
 
     steps:
-      # 1. Скачиваем ваш HTML/CSS
+      # 1. Скачиваем ваш единственный файл index.html
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Собираем APK с помощью официального инструмента Google Bubblewrap
-      - name: Build Android APK
-        uses: s0/action-web-to-apk@v2.2.0
+      # 2. Настраиваем Java 17 для Android-компилятора
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          app-name: "Fishing Game"
-          package-id: "com.nikitadroid.fishing"
-          web-root: "." # Ищет index.html прямо в корне репозитория
+          distribution: 'zulu'
+          java-version: '17'
 
-      # 3. Публикуем чистый APK в Релизы без ZIP-архивов
+      # 3. Настраиваем Node.js и инструмент сборки
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 4. Создаем чистое мобильное приложение из одного index.html
+      - name: Create App Environment
+        run: |
+          npm install -g @capacitor/cli @capacitor/core @capacitor/android
+          echo '{ "appId": "com.nikitadroid.fishing", "appName": "Fishing Game", "webDir": "." }' > capacitor.config.json
+          npx cap add android
+          npx cap sync
+          cd android && ./gradlew assembleDebug
+
+      # 5. Публикуем чистый APK в Релизы (без создания ZIP-архивов)
       - name: Create GitHub Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
@@ -34,4 +48,4 @@ jobs:
           name: "Fishing Game v1.0.${{ github.run_number }}"
           draft: false
           prerelease: false
-          files: ./**/*.apk
+          files: android/app/build/outputs/apk/debug/app-debug.apk
