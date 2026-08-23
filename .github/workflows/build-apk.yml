@@ -1,1 +1,28 @@
+name: Generate APK from HTML
 
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: HTML to APK
+        uses: s0/action-web-to-apk@v1
+        with:
+          app-name: "Fishing Game"
+          package-id: "com.nikitadroid.fishing"
+          web-root: "." 
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-apk
+          path: ./**/*.apk
